@@ -10,26 +10,21 @@ class FeedForwardANN:
     delta = error
     """
 
-    def __init__(self, inputs, input_type, h_layers, h_neurons, outputs,
-                 err_func, act_func):
+    def __init__(self, inputs, h_layers, h_neurons, outputs, act_func):
         """
         Init the FF-ANN
 
         Args:
             inputs(int): Number of inputs for the ANN
-            input_type(numpy type): Data type of the input
             h_layers(int): Number of hidden layers. Excluding input layer and output layer.
             h_neurons(int): Number of neurons in each hidden layer
             outputs(int): Number of outputs for the ANN
-            err_func(function): Error function.
             act_func(function): Activation function for neurons of the ANN
         """
         self._inputs = inputs
-        self._input_type = input_type
         self._h_layers = h_layers
         self._h_neurons = h_neurons
         self._outputs = outputs
-        self._err_func = err_func
         self._act_func = act_func
 
         # Construct the architecture of the ANN
@@ -41,7 +36,7 @@ class FeedForwardANN:
         # Therefore, we need 3D array
         self._thetas = []
         # the first layer is not neuron layer but an input values
-        self._neurons.append(np.ones(self._inputs + 1, dtype=self._input_type))
+        self._neurons.append(np.ones(self._inputs + 1, dtype=np.float_64))
         # Check what is the act_funct and then set the data type for neuron values
         if self._act_func.__name__ == "sigmoid":
             dtype = np.float64
@@ -82,29 +77,17 @@ class FeedForwardANN:
         self._inputs = value
 
     @property
-    def input_type(self):
-        """input_type getter"""
-        return self._input_type
-
-    @input_type.setter
-    def input_type(self, value):
-        """input_type setter"""
-        if not type(value).__module__ == np.__name__:
-            raise TypeError("input_type must be a numpy data type")
-        self._input_type = value
-
-    @property
-    def layers(self):
-        """layers getter"""
+    def h_layers(self):
+        """h_layers getter"""
         return self._h_layers
 
-    @layers.setter
-    def layers(self, value):
-        """layers setter"""
+    @h_layers.setter
+    def h_layers(self, value):
+        """h_layers setter"""
         if not isinstance(value, int):
-            raise TypeError("Number of layers of ANN must be an integer!")
+            raise TypeError("Number of h_layers of ANN must be an integer!")
         if value < 0:
-            raise ValueError("Number of layers of ANN must be a zero or more!")
+            raise ValueError("Number of h_layers of ANN must be a zero or more!")
         self._h_layers = value
 
     @property
@@ -138,11 +121,6 @@ class FeedForwardANN:
         self._outputs = value
 
     @property
-    def err_func(self):
-        """err_func getter"""
-        return self._err_func
-
-    @property
     def act_func(self):
         """act_func getter"""
         return self._act_func
@@ -154,66 +132,5 @@ class FeedForwardANN:
 
     def back_propagation(self):
         """back propagation for ANN"""
-        #TODO
-        pass
-
-
-class Sigmoid:
-
-    @staticmethod
-    def sigmoid(values):
-        """
-        sigmoid function
-
-        Args:
-            values(list): Input list of floats to sigmoid function
-        Raises:
-            ValueError: If provided list does not contain only floats
-        Returns: float
-        """
-        #TODO
-        pass
-
-    @staticmethod
-    def err_func(expected_out, actual_output):
-        """
-        err_func for the sigmoid function
-        Args:
-            expected_out(float): expected output from the neuron
-            actual_out(float): actual output from the neuron
-        Raises:
-            ValueError: If expected_out or actual_out is not float type
-        Returns: calculated error
-        """
-        #TODO
-        pass
-
-
-class Sign:
-
-    @staticmethod
-    def sign(values):
-        """
-        sign function
-        Args:
-            values(list): Input list of floats to sign function
-        Raises:
-            ValueError: If provided list does not contain only floats
-        Returns: float
-        """
-        #TODO
-        pass
-
-    @staticmethod
-    def err_func(expected_out, actual_output):
-        """
-        err_func for sign function
-        Args:
-            expected_out(int): expected output from the neuron
-            actual_out(int): actual output from the neuron
-        Raises:
-            ValueError: If expected_out or actual_out is not int type
-        Returns: calculated error
-        """
         #TODO
         pass
