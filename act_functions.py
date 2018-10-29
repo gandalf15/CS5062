@@ -1,16 +1,20 @@
+#!/usr/bin/env python3
+import numpy as np
+
+
 class Sigmoid:
+
     def sigmoid(self, values):
         """
         sigmoid function
 
         Args:
-            values(list): Input list of floats to sigmoid function
+            values(np.array): Input array of float64 to sigmoid function
         Raises:
             ValueError: If provided list does not contain only floats
-        Returns: float
+        Returns: np.float64
         """
-        #TODO
-        pass
+        return 1 / (1 + np.exp(-values))
 
     def err_func(self, expected_out, actual_output):
         """
@@ -18,35 +22,63 @@ class Sigmoid:
         Args:
             expected_out(float): expected output from the neuron
             actual_out(float): actual output from the neuron
-        Raises:
-            ValueError: If expected_out or actual_out is not float type
-        Returns: calculated error
+        Returns(float): calculated error
         """
-        #TODO
-        pass
+        return actual_output * (1 - actual_output) * (
+            expected_out - actual_output)
+
 
 class Sign:
+
     def sign(self, values):
         """
         sign function
         Args:
-            values(list): Input list of floats to sign function
-        Raises:
-            ValueError: If provided list does not contain only floats
-        Returns: float
+            values(np.array): Input array of np.float64 to sign function
+        Returns: int
         """
-        #TODO
-        pass
+        sum_of_values = np.sum(values)
+        result = 0.0
+        if sum_of_values < 0.0:
+            result = -1.0
+        elif sum_of_values == 0.0:
+            result = 0.0
+        elif sum_of_values > 0.0:
+            result = 1.0
+        return result
 
     def err_func(self, expected_out, actual_output):
         """
         err_func for sign function
         Args:
-            expected_out(int): expected output from the neuron
-            actual_out(int): actual output from the neuron
-        Raises:
-            ValueError: If expected_out or actual_out is not int type
-        Returns: calculated error
+            expected_out(float): expected output from the neuron
+            actual_out(float): actual output from the neuron
+        Returns(float): calculated error
         """
-        #TODO
-        pass
+        return expected_out - actual_output
+
+
+class Threshold:
+
+    def threshold(self, values):
+        """
+        threshold function
+        Args:
+            values(np.array): Input array of np.float64 to sign function
+        Returns(float): result
+        """
+        sum_of_values = np.sum(values)
+        result = 0.0
+        if sum_of_values >= 0.5:
+            result = 1.0
+        return result
+
+    def err_func(self, expected_out, actual_output):
+        """
+        threshold for sign function
+        Args:
+            expected_out(float): expected output from the neuron
+            actual_out(float): actual output from the neuron
+        Returns(float): calculated error int
+        """
+        return expected_out - actual_output

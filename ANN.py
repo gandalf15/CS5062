@@ -6,6 +6,7 @@ class FeedForwardANN:
     """
     This class represents a FeedForward ANN with N layers.
     It is a vectorised implementation with the help of numpy.
+    I sometime refer to:
     Theta = weights
     delta = error
     """
@@ -33,33 +34,28 @@ class FeedForwardANN:
         # Init parameters (weights) with random values between 0 to 1
         # and add +1 for bias unit (neuron).
         # Each neuron has 1..N params and each layer has 1..N neurons.
-        # Therefore, we need 3D array
+        # Therefore, we have 3D array (list of 2D arrays)
         self._thetas = []
-        # the first layer is not neuron layer but an input values
-        self._neurons.append(np.ones(self._inputs + 1, dtype=np.float_64))
-        # Check what is the act_funct and then set the data type for neuron values
-        if self._act_func.__name__ == "sigmoid":
-            dtype = np.float64
-        elif self._act_func.__name__ == "sign":
-            dtype = np.bool_  # default for sgn function
-        else:
-            raise TypeError(
-                "Unknown act_func. Need to know for data type. Edit __init__ method"
-            )
+        # the first layer is an input layer
+        dtype = np.float_
+        self._neurons.append(np.ones(self._inputs + 1, dtype=dtype))
 
         for i in range(self._h_layers):
             self._neurons.append(np.ones(self._h_neurons + 1, dtype=dtype))
             if i == 0:
                 self._thetas.append(
                     np.random.rand((self._h_neurons + 1) * self._inputs))
-            elif i == self._h_layers - 1:
-                self._thetas.append(
-                    np.random.rand((self._h_neurons + 1) * self._outputs))
             else:
                 self._thetas.append(
-                    np.random.rand((self._h_neurons + 1) * self._h_neurons))
+                    np.random.rand((self._h_neurons + 1) * self._h_neurons + 1))
 
         self._neurons.append(np.ones(self._outputs, dtype=dtype))
+        if self._h_layers > 0:
+            self._thetas.append(
+                np.random.rand((self._h_neurons + 1) * self._outputs))
+        else:
+            self._thetas.append(
+                np.random.rand((self._inputs + 1) * self._outputs))
 
     @property
     def inputs(self):
@@ -87,7 +83,8 @@ class FeedForwardANN:
         if not isinstance(value, int):
             raise TypeError("Number of h_layers of ANN must be an integer!")
         if value < 0:
-            raise ValueError("Number of h_layers of ANN must be a zero or more!")
+            raise ValueError(
+                "Number of h_layers of ANN must be a zero or more!")
         self._h_layers = value
 
     @property
