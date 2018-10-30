@@ -4,7 +4,7 @@ import numpy as np
 
 class Sigmoid:
 
-    def sigmoid(self, values):
+    def act_func(self, values):
         """
         sigmoid function
 
@@ -14,7 +14,8 @@ class Sigmoid:
             ValueError: If provided list does not contain only floats
         Returns: np.float64
         """
-        return 1 / (1 + np.exp(-values))
+        sum_of_values = np.sum(values)
+        return 1 / (1 + np.exp(-sum_of_values))
 
     def err_func(self, expected_out, actual_output):
         """
@@ -30,7 +31,7 @@ class Sigmoid:
 
 class Sign:
 
-    def sign(self, values):
+    def act_func(self, values):
         """
         sign function
         Args:
@@ -60,7 +61,7 @@ class Sign:
 
 class Threshold:
 
-    def threshold(self, values):
+    def act_func(self, values):
         """
         threshold function
         Args:
