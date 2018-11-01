@@ -43,8 +43,8 @@ class FeedForwardANN:
         #     for i in range(self._h_layers - 1):
         #         self._thetas.append(2 * np.random.rand(self._h_neurons, self._h_neurons + self._bias_unit) - 1)
         # self._thetas.append(2 * np.random.rand(self._outputs, self._h_neurons + self._bias_unit) - 1)
-        self._thetas.append(2 * np.random.rand(self._inputs, self._h_neurons))
-        self._thetas.append(2 * np.random.rand(self._h_neurons, self._outputs))
+        self._thetas.append(2 * np.random.random((self._inputs, self._h_neurons)) - 1)
+        self._thetas.append(2 * np.random.random((self._h_neurons, self._outputs)) - 1)
         
     @property
     def inputs(self):
@@ -126,10 +126,13 @@ class FeedForwardANN:
         self._neurons.append(input_arr)
         for i in range(len(self._thetas)):
             self._neurons.append(self._act_func(np.dot(self._neurons[-1], self._thetas[i])))
+        # self._neurons[0] = input_arr
+        # self._neurons[1] = self._act_func(np.dot(layer_0, self._thetas[0]))
+        # self._neurons[2] = self._act_func(np.dot(layer_1, self._thetas[1]))
 
         return self._neurons[-1]
 
-    def back_propagation(self, expected_out, learning_rate=0.1):
+    def back_propagation(self, expected_out, learning_rate=1.0):
         """
         back propagation for ANN
         Args:
@@ -143,21 +146,22 @@ class FeedForwardANN:
         #         "expected_out is not the same size as number of outputs of the ANN!"
         #     )
 
-        # calculate error for the output layer
-        error_l2 = self._neurons[-1] - expected_out
+        # calculate error for the output 2*np.random.randomlayer
+        error_l2 = self._neurons[2] - expected_out
         if self._act_func.__name__ == 'sigmoid':
-            delta_l2 = sig_to_deriv(self._neurons[-1]) * error_l2
-            error_l1 = delta_l2.dot((self._thetas[-1]).T)
-            delta_l1 = sig_to_deriv(self._neurons[-2]) * error_l1
+            delta_l2 = sig_to_deriv(self._neurons[2]) * error_l2
+            error_l1 = delta_l2.dot((self._thetas[1]).T)
+            delta_l1 = sig_to_deriv(self._neurons[1]) * error_l1
         else:
-            delta_l2 = self._neurons[-1] * error_l2
+            delta_l2 = self._neurons[2] * error_l2
             error_l1 = delta_l2.dot((self._thetas[-1]).T)
-            delta_l1 = self._neurons[-2] * error_l1
+            delta_l1 = self._neurons[1] * error_l1
             
-        self._thetas[-1] -= learning_rate * (self._neurons[-2]).T.dot(delta_l2)
-        self._thetas[-2] -= learning_rate * (self._neurons[-3]).T.dot(delta_l1)
+        self._thetas[1] -= learning_rate * (self._neurons[1]).T.dot(delta_l2)
+        self._thetas[0] -= learning_rate * (self._neurons[0]).T.dot(delta_l1)
+        self._neurons = []
 
-    def train(self, training_set_input, expected_output, iterations, learning_rate=0.1):
+    def train(self, training_set_input, expected_output, iterations, learning_rate=1.0):
         """
         train method starts training of weights of the ANN
         Args:
@@ -177,8 +181,8 @@ class FeedForwardANN:
         for i in range(iterations):
             hypothesis = self.feed_forward(training_set_input)
             err = np.mean(np.abs(hypothesis - expected_output))
-            self.back_propagation(expected_output, learning_rate)
-            if i % 10000 == 0:
+            if i % 1000 != 0:
                 print("Iteration: ", i, "Mean Error: ", err)
-            err = 0.0
+            self.back_propagation(expected_output, learning_rate)
+            
         return err
