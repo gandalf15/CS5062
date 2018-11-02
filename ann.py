@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
+import os
+import pickle
+from time import gmtime, strftime
+
 import numpy as np
+
 from act_functions import sig_to_deriv
 
 
@@ -12,7 +17,7 @@ class FeedForwardANN:
     delta = error
     """
 
-    def __init__(self, inputs, h_neurons, outputs, act_func):
+    def __init__(self, inputs, h_neurons, h_layers, outputs, act_func):
         """
         Init the FF-ANN
 
@@ -22,30 +27,25 @@ class FeedForwardANN:
             outputs(int): Number of outputs for the ANN
             act_func(function): Activation function for neurons of the ANN
         """
+        #TODO: multiple layers
         np.random.seed(1)
         self._inputs = inputs
         self._h_neurons = h_neurons
+        self._h_layers = h_layers
         self._outputs = outputs
         self._act_func = act_func
-
         # Construct the architecture of the ANN
-        # Init the neurons and do not forget to create +1 bias unit
         self._neurons = []
-        # Init parameters (weights) with random values between 0 to 1
-        # and add +1 for bias unit (neuron).
-        # Each neuron has 1..N params and each layer has 1..N neurons.
-        # Therefore, we have 3D array (list of 2D arrays)
         self._thetas = []
         # the first layer is an input layer
-        # self._bias_unit = 0
-        # if self._h_layers > 0:
-        #     self._thetas.append(2 * np.random.rand(self._h_neurons, self._inputs + self._bias_unit))
-        #     for i in range(self._h_layers - 1):
-        #         self._thetas.append(2 * np.random.rand(self._h_neurons, self._h_neurons + self._bias_unit) - 1)
-        # self._thetas.append(2 * np.random.rand(self._outputs, self._h_neurons + self._bias_unit) - 1)
-        self._thetas.append(2 * np.random.random((self._inputs, self._h_neurons)) - 1)
-        self._thetas.append(2 * np.random.random((self._h_neurons, self._outputs)) - 1)
-        
+        self._thetas.append((2 * np.random.random(
+            (self._inputs, self._h_neurons)) - 1) * 0.01)
+        for i in range(self._h_layers - 1):
+            self._thetas.append((2 * np.random.random(
+                (self._h_neurons, self._h_neurons)) - 1) * 0.01)
+        self._thetas.append((2 * np.random.random(
+            (self._h_neurons, self._outputs)) - 1) * 0.01)
+
     @property
     def inputs(self):
         """inputs getter"""
@@ -114,25 +114,18 @@ class FeedForwardANN:
     def feed_forward(self, input_arr):
         """
         feed forward method for ANN
+
         Args:
             input_arr(np.array): array of input values. It must be the same size as inputs.
-        Raises:
-            ValueError: if the size of array is not the same as number of inputs fot the ANN
         Returns(np.array): array of output values from the ANN
         """
-        # if len(input_arr) != self._inputs:
-        #     raise ValueError(
-        #         "input_arr is not the same size as number of ANN inputs!")
         self._neurons.append(input_arr)
         for i in range(len(self._thetas)):
-            self._neurons.append(self._act_func(np.dot(self._neurons[-1], self._thetas[i])))
-        # self._neurons[0] = input_arr
-        # self._neurons[1] = self._act_func(np.dot(layer_0, self._thetas[0]))
-        # self._neurons[2] = self._act_func(np.dot(layer_1, self._thetas[1]))
-
+            self._neurons.append(
+                self._act_func(np.dot(self._neurons[-1], self._thetas[i])))
         return self._neurons[-1]
 
-    def back_propagation(self, expected_out, learning_rate=1.0):
+    def back_propagation(self, expected_out, learning_rate=0.001):
         """
         back propagation for ANN
         Args:
@@ -141,50 +134,98 @@ class FeedForwardANN:
         Raises:
             ValueError: if the len(expected out) != size of output of the ANN.
         """
-        # if len(expected_out) != self._outputs:
-        #     raise ValueError(
-        #         "expected_out is not the same size as number of outputs of the ANN!"
-        #     )
-
-        # calculate error for the output 2*np.random.randomlayer
-        error_l2 = self._neurons[2] - expected_out
+        errors, deltas = [], []
+        errors.append(self._neurons[-1] - expected_out)
         if self._act_func.__name__ == 'sigmoid':
-            delta_l2 = sig_to_deriv(self._neurons[2]) * error_l2
-            error_l1 = delta_l2.dot((self._thetas[1]).T)
-            delta_l1 = sig_to_deriv(self._neurons[1]) * error_l1
+            for i in reversed(range(1,len(self._neurons))):
+                deltas.append(sig_to_deriv(self._neurons[i]) * errors[-1])
+                if i != 1:
+                    errors.append(deltas[-1].dot((self._thetas[i-1]).T))
         else:
-            delta_l2 = self._neurons[2] * error_l2
-            error_l1 = delta_l2.dot((self._thetas[-1]).T)
-            delta_l1 = self._neurons[1] * error_l1
-            
-        self._thetas[1] -= learning_rate * (self._neurons[1]).T.dot(delta_l2)
-        self._thetas[0] -= learning_rate * (self._neurons[0]).T.dot(delta_l1)
+            raise TypeError('Unknown activation function')
+        j = len(deltas)-1
+        for i in range(len(deltas)):
+            self._thetas[i] -= learning_rate * (self._neurons[i]).T.dot(deltas[j])
+            j -= 1
         self._neurons = []
 
-    def train(self, training_set_input, expected_output, iterations, learning_rate=1.0):
+    def save_model(self, dir_path, file_name):
+        """
+        It saves the current model of the NN
+        
+        Args:
+            dir_path(str): Path to dir where to store the models
+            file_name(str): file name of the model
+        """
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+        full_path = os.path.join(dir_path, file_name)
+        with open(full_path, 'wb') as f:
+            pickle.dump(self._thetas, f, pickle.HIGHEST_PROTOCOL)
+
+    def load_model(self, dir_path, file_name):
+        """
+        It loads the specified model from the path provided
+
+        Args:
+            dir_path(str): Path to dir where the models are
+            file_name(str): file name of the model
+        """
+        full_path = os.path.join(dir_path, file_name)
+        with open(full_path, 'rb') as f:
+            self._thetas = pickle.load(f)
+
+    def train(self,
+              training_set,
+              expected_output,
+              iterations,
+              batch_size=0,
+              learning_rate=0.001,
+              checkpoint=0):
         """
         train method starts training of weights of the ANN
         Args:
-            training_set(np.array): 2d array with training examples. Last element is expected output
+            training_set(np.array): 2d array with training examples.
             expected_output(np.array): 2d array with expected output for training set
+            batch_size(int): How many examples to use at once. Default 0 means all
             iterations(int): max number of iterations
             learning_rate(float): learning rate
+            checkpoint(int): Save the model every N epoch. Default 0 means do not save.
         Raises:
             ValueError: if the dimensions of training set are not correct
         Returns(float):Error rate at the end of training
         """
-        # if training_set_input.shape[1] != self._inputs:
-        #     raise ValueError(
-        #         "training_set does not have rght amount of columns.\nExpected ",
-        #         self._inputs, " Instead I got: ", training_set_input.shape[1])
+        #TODO: Implement batch size training
         err = 0.0
         for i in range(iterations):
-            hypothesis = self.feed_forward(training_set_input)
-            err = np.mean(np.abs(hypothesis - expected_output))
-            if i % 1000 == 0:
-                # print("hypothesis: ", hypothesis)
-                # print("expected_output: ", expected_output)
-                print("Iteration: ", i, "Mean Error: ", err)
+            hypothesis = self.feed_forward(training_set)
             self.back_propagation(expected_output, learning_rate)
-            
+            err = np.mean((hypothesis - expected_output)**2)
+            if i % 500 == 0:
+                print("Iteration: ", i, "Mean Squared Error: ", err)
+            if checkpoint and i % checkpoint - 1 == 0 and i != 0:
+                file_name = strftime("%Y_%m_%d~%H-%M-%S_iter_",
+                                     gmtime()) + str(i)
+                self.save_model(dir_path='./saved_models/', file_name=file_name)
+
         return err
+
+
+# err = 0.0
+#         if batch_size == 0:
+#             batch_size = len(training_set)
+#         num_of_slices = int(len(training_set) / batch_size)
+#         batched_training_set = np.array_split(training_set, num_of_slices)
+#         batched_expected_output = np.array_split(expected_output, num_of_slices)
+#         for i in range(iterations):
+#             for j in range(num_of_slices):
+#                 hypothesis = self.feed_forward(batched_training_set[j])
+#                 self.back_propagation(batched_expected_output[j], learning_rate)
+#             err = np.mean(np.abs(hypothesis - expected_output[j]))
+#             if i % 100 == 0:
+#                 print("Iteration: ", i, "Mean Error: ", err)
+#             if checkpoint and i % checkpoint == 0 and i != 0:
+#                 file_name = strftime("%Y_%m_%d~%H-%M-%S_iter_", gmtime()) + str(i)
+#                 self.save_model(dir_path='./saved_models/', file_name=file_name)
+
+#         return err
