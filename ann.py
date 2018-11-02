@@ -181,7 +181,9 @@ class FeedForwardANN:
         for i in range(iterations):
             hypothesis = self.feed_forward(training_set_input)
             err = np.mean(np.abs(hypothesis - expected_output))
-            if i % 1000 != 0:
+            if i % 1000 == 0:
+                # print("hypothesis: ", hypothesis)
+                # print("expected_output: ", expected_output)
                 print("Iteration: ", i, "Mean Error: ", err)
             self.back_propagation(expected_output, learning_rate)
             
