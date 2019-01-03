@@ -38,13 +38,17 @@ class FeedForwardANN:
         self._neurons = []
         self._thetas = []
         # the first layer is an input layer
-        self._thetas.append((2 * np.random.random(
-            (self._inputs, self._h_neurons)) - 1) * 0.01)
-        for i in range(self._h_layers - 1):
+        if self._h_layers == 0:
             self._thetas.append((2 * np.random.random(
-                (self._h_neurons, self._h_neurons)) - 1) * 0.01)
-        self._thetas.append((2 * np.random.random(
-            (self._h_neurons, self._outputs)) - 1) * 0.01)
+                (self._inputs, self._outputs)) - 1) * 0.01)
+        else:
+            self._thetas.append((2 * np.random.random(
+                (self._inputs, self._h_neurons)) - 1) * 0.01)
+            for i in range(self._h_layers - 1):
+                self._thetas.append((2 * np.random.random(
+                    (self._h_neurons, self._h_neurons)) - 1) * 0.01)
+            self._thetas.append((2 * np.random.random(
+                (self._h_neurons, self._outputs)) - 1) * 0.01)
 
     @property
     def inputs(self):
@@ -136,16 +140,18 @@ class FeedForwardANN:
         """
         errors, deltas = [], []
         errors.append(self._neurons[-1] - expected_out)
+        # TODO: remove this dependenci on sigmodi... use act_function classes instead
         if self._act_func.__name__ == 'sigmoid':
-            for i in reversed(range(1,len(self._neurons))):
+            for i in reversed(range(1, len(self._neurons))):
                 deltas.append(sig_to_deriv(self._neurons[i]) * errors[-1])
                 if i != 1:
-                    errors.append(deltas[-1].dot((self._thetas[i-1]).T))
+                    errors.append(deltas[-1].dot((self._thetas[i - 1]).T))
         else:
             raise TypeError('Unknown activation function')
-        j = len(deltas)-1
+        j = len(deltas) - 1
         for i in range(len(deltas)):
-            self._thetas[i] -= learning_rate * (self._neurons[i]).T.dot(deltas[j])
+            self._thetas[i] -= learning_rate * (self._neurons[i]).T.dot(
+                deltas[j])
             j -= 1
         self._neurons = []
 
@@ -201,11 +207,11 @@ class FeedForwardANN:
             hypothesis = self.feed_forward(training_set)
             self.back_propagation(expected_output, learning_rate)
             err = np.mean((hypothesis - expected_output)**2)
-            if i % 500 == 0:
-                print("Iteration: ", i, "Mean Squared Error: ", err)
-            if checkpoint and i % checkpoint - 1 == 0 and i != 0:
+            # if i % 500 == 0:
+            #     print("Iteration: ", i, "Mean Squared Error: ", err)
+            if checkpoint and i % (checkpoint - 1) == 0 and i != 0:
                 file_name = strftime("%Y_%m_%d~%H-%M-%S_iter_",
-                                     gmtime()) + str(i)
+                                     gmtime()) + str(i + 1)
                 self.save_model(dir_path='./saved_models/', file_name=file_name)
 
         return err
